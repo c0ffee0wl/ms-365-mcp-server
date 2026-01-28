@@ -138,18 +138,29 @@ function removeInvisibleChars(text: string): string {
 
 /**
  * Clean up excessive whitespace and empty lines
+ * Handles regular spaces, tabs, and non-breaking spaces (\u00A0 from &nbsp;)
  */
 function normalizeWhitespace(text: string): string {
+  // Use \s which matches all whitespace, but preserve newlines where needed
+  // \u00A0 is non-breaking space (from &nbsp;)
+  const ws = ' \\t\\u00A0'; // whitespace chars except newline
+
   return (
     text
-      // Collapse multiple spaces/tabs to single space
-      .replace(/[ \t]{2,}/g, ' ')
-      // Remove lines that contain only whitespace
-      .replace(/^[ \t]+$/gm, '')
-      // Replace 3+ newlines with max 2
+      // First: convert non-breaking spaces to regular spaces
+      .replace(/\u00A0/g, ' ')
+      // Remove lines that contain only whitespace (make them empty)
+      .replace(new RegExp(`^[${ws}]+$`, 'gm'), '')
+      // Collapse 3+ newlines to 2
       .replace(/\n{3,}/g, '\n\n')
+      // Collapse multiple spaces/tabs to single space (within lines)
+      .replace(new RegExp(`[${ws}]{2,}`, 'g'), ' ')
       // Remove trailing whitespace on lines
-      .replace(/[ \t]+$/gm, '')
+      .replace(new RegExp(`[${ws}]+$`, 'gm'), '')
+      // Remove leading whitespace on lines (except indentation in code blocks - but we don't have those)
+      .replace(new RegExp(`^[${ws}]+`, 'gm'), '')
+      // Final: collapse any remaining multiple newlines
+      .replace(/\n{3,}/g, '\n\n')
       // Trim leading/trailing whitespace
       .trim()
   );
