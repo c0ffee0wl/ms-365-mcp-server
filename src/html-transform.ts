@@ -80,17 +80,20 @@ function unwrapSafeLinks(text: string): string {
 
 /**
  * Remove invisible Unicode characters that waste tokens
- * These are often inserted by email clients or copy-paste operations
+ * Uses Unicode property escapes to catch all format/invisible characters:
+ * - \p{Cf} = Format characters (zero-width spaces, joiners, directional marks, BOM, etc.)
+ * - U+034F = Combining Grapheme Joiner (in Mn category, but invisible)
+ * Includes: U+034F, U+200B-200F, U+202A-202E, U+2060, U+FEFF, U+00AD, etc.
  */
 function removeInvisibleChars(text: string): string {
-  // List of invisible/formatting characters to remove:
-  // - Zero-width characters (200B-200D)
-  // - Soft hyphen (00AD)
-  // - Word joiner (2060)
-  // - BOM (FEFF)
-  // - Directional marks and embeddings (200E-200F, 202A-202E)
-  // eslint-disable-next-line no-misleading-character-class
-  return text.replace(/[\u200B-\u200F\u00AD\u2060\uFEFF\u202A-\u202E]/g, '');
+  // Remove all Unicode format characters (Cf category)
+  // This includes zero-width spaces, joiners, directional marks, BOM, soft hyphen, etc.
+  let result = text.replace(/\p{Cf}/gu, '');
+
+  // Also remove U+034F (Combining Grapheme Joiner) which is in Mn category but invisible
+  result = result.replace(/\u034F/g, '');
+
+  return result;
 }
 
 /**
