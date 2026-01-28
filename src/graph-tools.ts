@@ -334,7 +334,8 @@ export function registerGraphTools(
   readOnly: boolean = false,
   enabledToolsPattern?: string,
   orgMode: boolean = false,
-  toonMode: boolean = false
+  toonMode: boolean = false,
+  defaultSimplifyHtml: boolean = false
 ): number {
   let enabledToolsRegex: RegExp | undefined;
   if (enabledToolsPattern) {
@@ -408,11 +409,12 @@ export function registerGraphTools(
 
     // Add simplifyHtml parameter for GET tools (except OneNote tools)
     if (tool.method.toUpperCase() === 'GET' && !ONENOTE_TOOLS.has(tool.alias)) {
+      const simplifyDefault = defaultSimplifyHtml || readOnly;
       paramSchema['simplifyHtml'] = z
         .boolean()
         .describe(
           'Convert HTML body content to Markdown for reduced tokens. ' +
-            `Default: ${readOnly ? 'true (read-only mode)' : 'false'}.`
+            `Default: ${simplifyDefault ? 'true' : 'false'}.`
         )
         .optional();
     }
@@ -436,7 +438,8 @@ export function registerGraphTools(
           openWorldHint: true, // All tools call Microsoft Graph API
         },
         async (params) => {
-          const simplifyHtml = (params.simplifyHtml as boolean | undefined) ?? readOnly;
+          const simplifyHtml =
+            (params.simplifyHtml as boolean | undefined) ?? (defaultSimplifyHtml || readOnly);
           return toolContext.run(
             {
               toolName: tool.alias,
@@ -492,7 +495,8 @@ export function registerDiscoveryTools(
   graphClient: GraphClient,
   readOnly: boolean = false,
   orgMode: boolean = false,
-  toonMode: boolean = false
+  toonMode: boolean = false,
+  defaultSimplifyHtml: boolean = false
 ): void {
   const toolsRegistry = buildToolsRegistry(readOnly, orgMode);
   logger.info(`Discovery mode: ${toolsRegistry.size} tools available in registry`);
@@ -606,7 +610,8 @@ export function registerDiscoveryTools(
         };
       }
 
-      const simplifyHtml = (parameters.simplifyHtml as boolean | undefined) ?? readOnly;
+      const simplifyHtml =
+        (parameters.simplifyHtml as boolean | undefined) ?? (defaultSimplifyHtml || readOnly);
       return toolContext.run(
         {
           toolName: tool_name,

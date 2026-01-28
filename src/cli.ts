@@ -47,6 +47,10 @@ program
   .option('--work-mode', 'Alias for --org-mode')
   .option('--force-work-scopes', 'Backwards compatibility alias for --org-mode (deprecated)')
   .option('--toon', '(experimental) Enable TOON output format for 30-60% token reduction')
+  .option(
+    '--simplify-html',
+    'Convert HTML body content to Markdown by default (reduces tokens). Always respects OneNote exceptions.'
+  )
   .option('--discovery', 'Enable runtime tool discovery and loading (experimental feature)')
   .option('--cloud <type>', 'Microsoft cloud environment: global (default) or china (21Vianet)')
   .option(
@@ -72,6 +76,7 @@ export interface CommandOptions {
   workMode?: boolean;
   forceWorkScopes?: boolean;
   toon?: boolean;
+  simplifyHtml?: boolean;
   discovery?: boolean;
   cloud?: string;
   enableDynamicRegistration?: boolean;
@@ -131,6 +136,13 @@ export function parseArgs(): CommandOptions {
 
   if (process.env.MS365_MCP_OUTPUT_FORMAT === 'toon') {
     options.toon = true;
+  }
+
+  if (
+    process.env.MS365_MCP_SIMPLIFY_HTML === 'true' ||
+    process.env.MS365_MCP_SIMPLIFY_HTML === '1'
+  ) {
+    options.simplifyHtml = true;
   }
 
   // Handle cloud type - CLI option takes precedence over environment variable
