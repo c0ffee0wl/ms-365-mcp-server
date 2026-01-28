@@ -81,21 +81,23 @@ turndown.addRule('optimizeLinks', {
  * so we convert them to paragraph-wrapped URLs that will be preserved.
  */
 function extractMediaUrls(html: string): string {
-  return html
-    // iframe src → URL in paragraph
-    .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/iframe>/gi, '<p>$1</p>')
-    .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
-    // object data → URL in paragraph
-    .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*>[\s\S]*?<\/object>/gi, '<p>$1</p>')
-    .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
-    // embed src → URL in paragraph
-    .replace(/<embed[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
-    // video src → URL in paragraph
-    .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/video>/gi, '<p>$1</p>')
-    .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
-    // audio src → URL in paragraph
-    .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/audio>/gi, '<p>$1</p>')
-    .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>');
+  return (
+    html
+      // iframe src → URL in paragraph
+      .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/iframe>/gi, '<p>$1</p>')
+      .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+      // object data → URL in paragraph
+      .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*>[\s\S]*?<\/object>/gi, '<p>$1</p>')
+      .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+      // embed src → URL in paragraph
+      .replace(/<embed[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+      // video src → URL in paragraph
+      .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/video>/gi, '<p>$1</p>')
+      .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+      // audio src → URL in paragraph
+      .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/audio>/gi, '<p>$1</p>')
+      .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+  );
 }
 
 /**
