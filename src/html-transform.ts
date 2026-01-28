@@ -32,20 +32,9 @@ turndown.remove([
 ]);
 
 // Custom rule to completely remove images (void elements need explicit handling)
+// This also removes tracking pixels since we remove ALL images
 turndown.addRule('removeImages', {
   filter: 'img',
-  replacement: () => '',
-});
-
-// Custom rule to remove tracking pixels and 1x1 images that might slip through
-turndown.addRule('removeTrackingPixels', {
-  filter: (node: TurndownNode) => {
-    if (node.nodeName !== 'IMG') return false;
-    const width = node.getAttribute('width');
-    const height = node.getAttribute('height');
-    // Remove 1x1 tracking pixels
-    return width === '1' || height === '1';
-  },
   replacement: () => '',
 });
 
@@ -139,10 +128,15 @@ function removeInvisibleChars(text: string): string {
 /**
  * Clean up excessive whitespace and empty lines
  * Process line-by-line to ensure proper handling after all joins
+ *
+ * Uses Unicode property escapes (\p{Zs}) to match ALL space separator characters:
+ * - U+0020 (Space), U+00A0 (NBSP), U+2000-U+200A (various width spaces),
+ * - U+202F (Narrow NBSP), U+205F (Medium Math Space), U+3000 (Ideographic Space)
  */
 function normalizeWhitespace(text: string): string {
-  // Step 1: Convert non-breaking spaces to regular spaces
-  text = text.replace(/\u00A0/g, ' ');
+  // Step 1: Convert ALL Unicode space characters to regular ASCII space
+  // \p{Zs} matches the entire "Space Separator" Unicode category
+  text = text.replace(/\p{Zs}/gu, ' ');
 
   // Step 2: Split into lines and process each
   const lines = text.split('\n').map((line) => {
