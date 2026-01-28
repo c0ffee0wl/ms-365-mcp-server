@@ -23,7 +23,8 @@
     "pathPattern": "/me/messages/{message-id}",
     "method": "get",
     "toolName": "get-mail-message",
-    "scopes": ["Mail.Read"]
+    "scopes": ["Mail.Read"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content, not when user may want to edit or reply."
   },
   {
     "pathPattern": "/me/sendMail",
@@ -50,7 +51,8 @@
     "pathPattern": "/users/{user-id}/messages/{message-id}",
     "method": "get",
     "toolName": "get-shared-mailbox-message",
-    "workScopes": ["Mail.Read.Shared"]
+    "workScopes": ["Mail.Read.Shared"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content, not when user may want to edit or reply."
   },
   {
     "pathPattern": "/users/{user-id}/sendMail",
@@ -113,14 +115,16 @@
     "method": "get",
     "toolName": "list-calendar-events",
     "scopes": ["Calendars.Read"],
-    "supportsTimezone": true
+    "supportsTimezone": true,
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/me/events/{event-id}",
     "method": "get",
     "toolName": "get-calendar-event",
     "scopes": ["Calendars.Read"],
-    "supportsTimezone": true
+    "supportsTimezone": true,
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/me/events",
@@ -147,14 +151,16 @@
     "method": "get",
     "toolName": "list-specific-calendar-events",
     "scopes": ["Calendars.Read"],
-    "supportsTimezone": true
+    "supportsTimezone": true,
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/me/calendars/{calendar-id}/events/{event-id}",
     "method": "get",
     "toolName": "get-specific-calendar-event",
     "scopes": ["Calendars.Read"],
-    "supportsTimezone": true
+    "supportsTimezone": true,
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/me/calendars/{calendar-id}/events",
@@ -181,7 +187,8 @@
     "method": "get",
     "toolName": "get-calendar-view",
     "scopes": ["Calendars.Read"],
-    "supportsTimezone": true
+    "supportsTimezone": true,
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/me/calendars",
@@ -434,13 +441,15 @@
     "pathPattern": "/chats/{chat-id}/messages",
     "method": "get",
     "toolName": "list-chat-messages",
-    "workScopes": ["ChatMessage.Read"]
+    "workScopes": ["ChatMessage.Read"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/chats/{chat-id}/messages/{chatMessage-id}",
     "method": "get",
     "toolName": "get-chat-message",
-    "workScopes": ["ChatMessage.Read"]
+    "workScopes": ["ChatMessage.Read"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/chats/{chat-id}/messages",
@@ -476,13 +485,15 @@
     "pathPattern": "/teams/{team-id}/channels/{channel-id}/messages",
     "method": "get",
     "toolName": "list-channel-messages",
-    "workScopes": ["ChannelMessage.Read.All"]
+    "workScopes": ["ChannelMessage.Read.All"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/teams/{team-id}/channels/{channel-id}/messages/{chatMessage-id}",
     "method": "get",
     "toolName": "get-channel-message",
-    "workScopes": ["ChannelMessage.Read.All"]
+    "workScopes": ["ChannelMessage.Read.All"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/teams/{team-id}/channels/{channel-id}/messages",
@@ -500,7 +511,8 @@
     "pathPattern": "/chats/{chat-id}/messages/{chatMessage-id}/replies",
     "method": "get",
     "toolName": "list-chat-message-replies",
-    "workScopes": ["ChatMessage.Read"]
+    "workScopes": ["ChatMessage.Read"],
+    "llmTip": "Use simplifyHtml=true to convert HTML body to Markdown for reduced tokens when you only need to read/summarize content."
   },
   {
     "pathPattern": "/chats/{chat-id}/messages/{chatMessage-id}/replies",

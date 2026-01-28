@@ -5,6 +5,8 @@ import { encode as toonEncode } from '@toon-format/toon';
 import type { AppSecrets } from './secrets.js';
 import { getCloudEndpoints } from './cloud-config.js';
 import { getRequestTokens } from './request-context.js';
+import { htmlToMarkdown } from './html-transform.js';
+import { shouldSimplifyHtml } from './tool-context.js';
 
 interface GraphRequestOptions {
   headers?: Record<string, string>;
@@ -200,6 +202,36 @@ class GraphClient {
     }
   }
 
+  private transformHtmlFields(data: unknown): unknown {
+    if (!data || typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map((item) => this.transformHtmlFields(item));
+
+    const obj = data as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === 'value' && Array.isArray(value)) {
+        result[key] = value.map((item) => this.transformHtmlFields(item));
+      } else if (key === 'body' && typeof value === 'object' && value !== null) {
+        const body = value as Record<string, unknown>;
+        if (body.contentType === 'html' && typeof body.content === 'string') {
+          result[key] = {
+            ...body,
+            content: htmlToMarkdown(body.content as string),
+            contentType: 'markdown',
+          };
+        } else {
+          result[key] = this.transformHtmlFields(value);
+        }
+      } else if (typeof value === 'object') {
+        result[key] = this.transformHtmlFields(value);
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
   formatJsonResponse(data: unknown, rawResponse = false, excludeResponse = false): McpResponse {
     // If excludeResponse is true, only return success indication
     if (excludeResponse) {
@@ -208,9 +240,15 @@ class GraphClient {
       };
     }
 
+    // Transform HTML fields to Markdown if simplifyHtml is enabled
+    let processedData = data;
+    if (shouldSimplifyHtml()) {
+      processedData = this.transformHtmlFields(data);
+    }
+
     // Handle the case where data includes headers metadata
-    if (data && typeof data === 'object' && '_headers' in data) {
-      const responseData = data as {
+    if (processedData && typeof processedData === 'object' && '_headers' in processedData) {
+      const responseData = processedData as {
         data: unknown;
         _headers: Record<string, string>;
         _etag?: string;
@@ -268,11 +306,11 @@ class GraphClient {
     // Original handling for backward compatibility
     if (rawResponse) {
       return {
-        content: [{ type: 'text', text: this.serializeData(data, this.outputFormat) }],
+        content: [{ type: 'text', text: this.serializeData(processedData, this.outputFormat) }],
       };
     }
 
-    if (data === null || data === undefined) {
+    if (processedData === null || processedData === undefined) {
       return {
         content: [{ type: 'text', text: this.serializeData({ success: true }, this.outputFormat) }],
       };
@@ -291,10 +329,10 @@ class GraphClient {
       }
     };
 
-    removeODataProps(data as Record<string, unknown>);
+    removeODataProps(processedData as Record<string, unknown>);
 
     return {
-      content: [{ type: 'text', text: this.serializeData(data, this.outputFormat, true) }],
+      content: [{ type: 'text', text: this.serializeData(processedData, this.outputFormat, true) }],
     };
   }
 }

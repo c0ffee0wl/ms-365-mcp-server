@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { TOOL_CATEGORIES } from './tool-categories.js';
+import { toolContext, ONENOTE_TOOLS } from './tool-context.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,7 +98,11 @@ async function executeGraphTool(
 
     for (const [paramName, paramValue] of Object.entries(params)) {
       // Skip control parameters - not part of the Microsoft Graph API
-      if (['fetchAllPages', 'includeHeaders', 'excludeResponse', 'timezone'].includes(paramName)) {
+      if (
+        ['fetchAllPages', 'includeHeaders', 'excludeResponse', 'timezone', 'simplifyHtml'].includes(
+          paramName
+        )
+      ) {
         continue;
       }
 
@@ -328,7 +333,8 @@ export function registerGraphTools(
   graphClient: GraphClient,
   readOnly: boolean = false,
   enabledToolsPattern?: string,
-  orgMode: boolean = false
+  orgMode: boolean = false,
+  toonMode: boolean = false
 ): number {
   let enabledToolsRegex: RegExp | undefined;
   if (enabledToolsPattern) {
@@ -400,6 +406,17 @@ export function registerGraphTools(
         .optional();
     }
 
+    // Add simplifyHtml parameter for GET tools (except OneNote tools)
+    if (tool.method.toUpperCase() === 'GET' && !ONENOTE_TOOLS.has(tool.alias)) {
+      paramSchema['simplifyHtml'] = z
+        .boolean()
+        .describe(
+          'Convert HTML body content to Markdown for reduced tokens. ' +
+            `Default: ${readOnly ? 'true (read-only mode)' : 'false'}.`
+        )
+        .optional();
+    }
+
     // Build the tool description, optionally appending LLM tips
     let toolDescription =
       tool.description || `Execute ${tool.method.toUpperCase()} request to ${tool.path}`;
@@ -418,7 +435,18 @@ export function registerGraphTools(
           destructiveHint: ['POST', 'PATCH', 'DELETE'].includes(tool.method.toUpperCase()),
           openWorldHint: true, // All tools call Microsoft Graph API
         },
-        async (params) => executeGraphTool(tool, endpointConfig, graphClient, params)
+        async (params) => {
+          const simplifyHtml = (params.simplifyHtml as boolean | undefined) ?? readOnly;
+          return toolContext.run(
+            {
+              toolName: tool.alias,
+              simplifyHtml,
+              readOnlyMode: readOnly,
+              toonMode,
+            },
+            () => executeGraphTool(tool, endpointConfig, graphClient, params)
+          );
+        }
       );
       registeredCount++;
     } catch (error) {
@@ -463,7 +491,8 @@ export function registerDiscoveryTools(
   server: McpServer,
   graphClient: GraphClient,
   readOnly: boolean = false,
-  orgMode: boolean = false
+  orgMode: boolean = false,
+  toonMode: boolean = false
 ): void {
   const toolsRegistry = buildToolsRegistry(readOnly, orgMode);
   logger.info(`Discovery mode: ${toolsRegistry.size} tools available in registry`);
@@ -577,7 +606,16 @@ export function registerDiscoveryTools(
         };
       }
 
-      return executeGraphTool(toolData.tool, toolData.config, graphClient, parameters);
+      const simplifyHtml = (parameters.simplifyHtml as boolean | undefined) ?? readOnly;
+      return toolContext.run(
+        {
+          toolName: tool_name,
+          simplifyHtml,
+          readOnlyMode: readOnly,
+          toonMode,
+        },
+        () => executeGraphTool(toolData.tool, toolData.config, graphClient, parameters)
+      );
     }
   );
 }
