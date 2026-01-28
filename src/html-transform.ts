@@ -138,32 +138,43 @@ function removeInvisibleChars(text: string): string {
 
 /**
  * Clean up excessive whitespace and empty lines
- * Handles regular spaces, tabs, and non-breaking spaces (\u00A0 from &nbsp;)
+ * Process line-by-line to ensure proper handling after all joins
  */
 function normalizeWhitespace(text: string): string {
-  // Use \s which matches all whitespace, but preserve newlines where needed
-  // \u00A0 is non-breaking space (from &nbsp;)
-  const ws = ' \\t\\u00A0'; // whitespace chars except newline
+  // Step 1: Convert non-breaking spaces to regular spaces
+  text = text.replace(/\u00A0/g, ' ');
 
-  return (
-    text
-      // First: convert non-breaking spaces to regular spaces
-      .replace(/\u00A0/g, ' ')
-      // Remove lines that contain only whitespace (make them empty)
-      .replace(new RegExp(`^[${ws}]+$`, 'gm'), '')
-      // Collapse 3+ newlines to 2
-      .replace(/\n{3,}/g, '\n\n')
-      // Collapse multiple spaces/tabs to single space (within lines)
-      .replace(new RegExp(`[${ws}]{2,}`, 'g'), ' ')
-      // Remove trailing whitespace on lines
-      .replace(new RegExp(`[${ws}]+$`, 'gm'), '')
-      // Remove leading whitespace on lines (except indentation in code blocks - but we don't have those)
-      .replace(new RegExp(`^[${ws}]+`, 'gm'), '')
-      // Final: collapse any remaining multiple newlines
-      .replace(/\n{3,}/g, '\n\n')
-      // Trim leading/trailing whitespace
-      .trim()
-  );
+  // Step 2: Split into lines and process each
+  const lines = text.split('\n').map((line) => {
+    // Collapse multiple spaces/tabs to single space within each line
+    // and trim leading/trailing whitespace
+    return line.replace(/[ \t]+/g, ' ').trim();
+  });
+
+  // Step 3: Remove empty lines but keep paragraph breaks (max one empty line)
+  const result: string[] = [];
+  let prevWasEmpty = true; // Start true to skip leading empty lines
+
+  for (const line of lines) {
+    if (line === '') {
+      // Only add empty line if previous wasn't empty (creates paragraph break)
+      if (!prevWasEmpty) {
+        result.push('');
+        prevWasEmpty = true;
+      }
+    } else {
+      result.push(line);
+      prevWasEmpty = false;
+    }
+  }
+
+  // Step 4: Join lines and do final cleanup
+  let output = result.join('\n');
+
+  // Step 5: FINAL - collapse any remaining multiple spaces (after all joins)
+  output = output.replace(/ {2,}/g, ' ');
+
+  return output.trim();
 }
 
 export function htmlToMarkdown(html: string): string {
