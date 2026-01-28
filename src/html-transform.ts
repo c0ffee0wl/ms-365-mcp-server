@@ -1,5 +1,11 @@
 import TurndownService from 'turndown';
 
+// Minimal interface for Turndown's node type (avoids browser-only HTMLElement)
+interface TurndownNode {
+  nodeName: string;
+  getAttribute(name: string): string | null;
+}
+
 const turndown = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
@@ -16,7 +22,7 @@ turndown.addRule('removeImages', {
 
 // Custom rule to remove tracking pixels and 1x1 images that might slip through
 turndown.addRule('removeTrackingPixels', {
-  filter: (node: HTMLElement) => {
+  filter: (node: TurndownNode) => {
     if (node.nodeName !== 'IMG') return false;
     const width = node.getAttribute('width');
     const height = node.getAttribute('height');
