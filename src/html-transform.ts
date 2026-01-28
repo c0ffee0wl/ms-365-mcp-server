@@ -11,10 +11,25 @@ const turndown = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
   bulletListMarker: '-',
+
+  // Optimize: empty/blank elements produce no output
+  blankReplacement: () => '',
+
+  // Optimize: unknown elements just return their content without extra whitespace
+  defaultReplacement: (content: string) => content,
 });
 
-// Remove script, style, noscript elements (these have content)
-turndown.remove(['script', 'style', 'noscript']);
+// Remove elements that truly have no useful text content
+turndown.remove([
+  'script', // Code
+  'style', // CSS
+  'noscript', // Fallback content (usually not useful)
+  'template', // Not rendered
+  'canvas', // Graphics only
+  'svg', // Graphics (text inside is rare in emails)
+  // Note: We intentionally keep nav, footer, aside, form - they may contain useful text
+  // Note: iframe, object, embed, video, audio URLs are extracted via pre-processing
+]);
 
 // Custom rule to completely remove images (void elements need explicit handling)
 turndown.addRule('removeImages', {
@@ -61,6 +76,29 @@ turndown.addRule('optimizeLinks', {
 });
 
 /**
+ * Pre-process HTML to extract URLs from media elements before Turndown
+ * Turndown doesn't process iframe, object, embed, video, audio elements properly,
+ * so we convert them to paragraph-wrapped URLs that will be preserved.
+ */
+function extractMediaUrls(html: string): string {
+  return html
+    // iframe src → URL in paragraph
+    .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/iframe>/gi, '<p>$1</p>')
+    .replace(/<iframe[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+    // object data → URL in paragraph
+    .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*>[\s\S]*?<\/object>/gi, '<p>$1</p>')
+    .replace(/<object[^>]*\sdata=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+    // embed src → URL in paragraph
+    .replace(/<embed[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+    // video src → URL in paragraph
+    .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/video>/gi, '<p>$1</p>')
+    .replace(/<video[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>')
+    // audio src → URL in paragraph
+    .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/audio>/gi, '<p>$1</p>')
+    .replace(/<audio[^>]*\ssrc=["']([^"']+)["'][^>]*\/?>/gi, '<p>$1</p>');
+}
+
+/**
  * Extract the original URL from Microsoft Safe Links wrapper
  * Safe Links format: https://na01.safelinks.protection.outlook.com/?url=ENCODED_URL&data=...
  */
@@ -102,7 +140,11 @@ function removeInvisibleChars(text: string): string {
 function normalizeWhitespace(text: string): string {
   return (
     text
-      // Replace multiple newlines with max 2
+      // Collapse multiple spaces/tabs to single space
+      .replace(/[ \t]{2,}/g, ' ')
+      // Remove lines that contain only whitespace
+      .replace(/^[ \t]+$/gm, '')
+      // Replace 3+ newlines with max 2
       .replace(/\n{3,}/g, '\n\n')
       // Remove trailing whitespace on lines
       .replace(/[ \t]+$/gm, '')
@@ -114,7 +156,10 @@ function normalizeWhitespace(text: string): string {
 export function htmlToMarkdown(html: string): string {
   if (!html || typeof html !== 'string') return html;
   try {
-    let markdown = turndown.turndown(html);
+    // Pre-process: extract URLs from media elements (iframe, object, embed, video, audio)
+    const preprocessedHtml = extractMediaUrls(html);
+
+    let markdown = turndown.turndown(preprocessedHtml);
 
     // Post-process: unwrap Microsoft Safe Links
     markdown = unwrapSafeLinks(markdown);
